@@ -1,0 +1,7 @@
+{
+  "desc":"sanitizedDescription",
+  "name":"name",
+  "level":"summonerLevel",
+  "cost":"cost",
+  "cooldown":"cooldown"
+}

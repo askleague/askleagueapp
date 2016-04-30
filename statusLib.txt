@@ -1,0 +1,6 @@
+{
+  "game":"0",
+  "store":"1",
+  "website":"2",
+  "client":"3"
+}

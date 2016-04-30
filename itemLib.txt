@@ -1,0 +1,6 @@
+{
+  "name":"sanitizedDescription",
+  "cost":"base",
+  "sell":"sell",
+  "total":"total"
+}
