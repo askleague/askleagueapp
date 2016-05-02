@@ -18,6 +18,7 @@ class MyStreamListener(tweepy.StreamListener):
     def on_data(self, data):
         msg = json.loads(data.strip())
         retweet = msg['retweeted']
+        global user
         user = msg['user']['screen_name']
         print user + " says " + msg['text']
 
@@ -125,7 +126,7 @@ def buildLibrary():
     outFile.close()
     print "all champions found!"
 
-def callAPI(endpoint, entityID='', query=''):
+def staticAPI(endpoint, entityID='', query=''):
     "This calls the api"
 
     if (entityID == ''):
@@ -138,7 +139,7 @@ def callAPI(endpoint, entityID='', query=''):
     getRequest = requests.get(url)
     return getRequest
 
-def getSummoner(username, value, ranked='unranked', champ='', season='SEASON2016', mode='unranked 5v5'):
+def getSummoner(username, value, ranked='unranked', champ=0, season='SEASON2016', mode='unranked 5v5'):
     "This calls the API for all summoner information"
 
     url = 'https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/' + username + '?' + riotKey
@@ -152,33 +153,44 @@ def getSummoner(username, value, ranked='unranked', champ='', season='SEASON2016
         season = 'SEASON2016'
 
     if (mode == ''):
-        mode = "unranked 5v5"
+        mode = "Unranked"
 
     summonerID = ''
+    requestedValue = ''
     callString = requests.get(url)
     if (callString.status_code == 200):
         callDict = json.loads(callString.content)
         summonerID = callDict[username.replace(" ", "")]['id']
         print "summoner ID: " + str(summonerID)
+    else:
+        #A twitter response should be made here to tweet that the user does not exist
+        print "Code was: " + str(callString.status_code)
 
     if (summonerID != ''):
         if (ranked == 'ranked'):
             print "checking ranked stats"
-            url = 'https://na.api.pvp.net/api/lol/na/v1.3/stats/by-summoner/' + str(summonerID) + '/ranked?season=' + season + '&' + riotkey
+            url = 'https://na.api.pvp.net/api/lol/na/v1.3/stats/by-summoner/' + str(summonerID) + '/ranked?season=' + season + '&' + riotKey
             print url
             callString = requests.get(url)
             callDict = json.loads(callString.content)
+
+            #Find that champion's stats
+            for champion in callDict['champions']:
+                print repr(champion['id'])
+                print repr(champ)
+                if str(champion['id']) == champ:
+                    print "This user does use this champion!!"
+                    print "that champion's id is: " + champ
+                    requestedValue = champion['stats'][value]
+                    break
+
+            print "Requested value was " + str(requestedValue)
+            return requestedValue
         elif (ranked == 'unranked'):
             url = 'https://na.api.pvp.net/api/lol/na/v1.3/stats/by-summoner/' + str(summonerID) + '/summary?season=' + season + '&' + riotKey
             print url
             callString = requests.get(url)
             callDict = json.loads(callString.content)
-
-            #Here the libraries are called to determine what the user is looking for
-            #modeValue = ''
-            #print "mode is: " + mode
-            #modeValue = getTerm(mode, modeLib)
-            #searchValue = getTerm(value, modeLib)
 
             #Once we know what the user is looking for, make the call to retrive the term they want
             print "mode value is: " + mode
@@ -206,16 +218,19 @@ def getRandomEntity(jsonDict):
 def sendTweet(msg, tweetID=''):
     "This formats and sends tweets"
 
-    tweets = textwrap.wrap(msg, width = 135)
+    maxChars = 132 - len(user)
+    tweets = textwrap.wrap(msg, width = maxChars)
     numMessages = len(tweets)
     if (numMessages > 1):
         i = numMessages
         for element in reversed(tweets):
-            element = '(' + str(i) + '/' + str(len(tweets)) + ') ' + element
+            element = "@" + user + ' (' + str(i) + '/' + str(len(tweets)) + ') ' + element
             i -= 1
             print element
             api.update_status(element, tweetID)
     else:
+        msg = "@" + user + " " + msg
+        print msg
         api.update_status(msg, tweetID)
 
 def processRequest(words, user):
@@ -265,19 +280,26 @@ def processRequest(words, user):
                         seasonValue = getTerm(keywords[x], seasonLib)
                     else:
                         check = getTerm(keywords[x], statLib)
-                        if (check != ''):
+                        if check != '':
                             requestedValue = check
                             print "Stat request made======="
 
                         check = getTerm(keywords[x], modeLib)
                         print keywords[x] + " == " + check
-                        if (check != ''):
+                        if check != '':
                             modeValue = check
                             print "Mode request made======="
+
+                        check = getChamp(keywords[x])
+                        print keywords[x] + " == " + check
+                        if check != '':
+                            champValue = check
+                            print "Champ request made======"
                 else:
                     break
 
-            print "\nrequested value: " + requestedValue
+            print "\nsummoner value: " + summonerName
+            print "requested value: " + requestedValue
             print "ranked value: " + rankedValue
             print "champion value: " + champValue
             print "season value: " + seasonValue
@@ -287,13 +309,124 @@ def processRequest(words, user):
             #requestedValue = keywords[x + 1]
             print "user is asking for " + summonerName + "'s " + requestedValue + " in the mode " + modeValue
             answer = getSummoner(summonerName, requestedValue, rankedValue, champValue, seasonValue, modeValue)
-            print "WE'VE GOT A VALUE! ITS: " + str(answer)
-            tweetMessage = "@" + user + " " + requestedValue + " " + str(answer)
+            tweetMessage = requestedValue + " " + str(answer)
             print tweetMessage
             return tweetMessage
-        elif (keywords[1] == 'champion' or 'item' or 'mastery' or 'spell' or 'status'):
-            print keywords[1] + " information requested"
-            r = callAPI(keywords[1])
+        elif (keywords[0] == 'champion'):
+            print keywords[0] + " information requested"
+            check = getChamp(keywords[1])
+            print keywords[1] + " == " + check
+            if check != '':
+                champValue = check
+                print "Champ request made======"
+            else:
+                print "champion not found!"
+
+            #We have to get the 2 values the user is searching for in some cases
+            #by default, the second value is usually just name
+            value = keywords[2]
+            check = getTerm(value, champStatLib)
+            if check != '':
+                value = check
+            else:
+                print "first value not found!"
+
+            value2 = ''
+            if querySize > 3:
+                value2 = keywords[3]
+                check = getTerm(value2, champStatLib)
+                if check != '':
+                    value2 = check
+                else:
+                    print "second value not found!"
+
+            r = staticAPI(keywords[0], champValue, 'champData=all')
+            callDict = json.loads(r.content)
+
+            if value == 'passive':
+                if value2 != '':
+                    requestedValue = callDict[value][value2]
+                    print "Passive " + value2 + " is " + requestedValue
+                else:
+                    requestedValue = callDict[value]['name']
+                    print "Passive name is " + requestedValue
+            elif (len(value) == 1):
+                print "val length is " + str(len(value))
+                if value2 != '':
+                    if value2 == 'name' or value2 == 'sanitizedDescription':
+                        requestedValue = callDict['spells'][int(value)][value2]
+
+                    if value2 == 'cost' or value2 == 'cooldown':
+                        requestedValue = ''
+                        for val in callDict['spells'][int(value)][value2]:
+                            requestedValue = requestedValue + str(val) + "/"
+
+
+                    print "Spell" + value2 + " is " + requestedValue
+                else:
+                    requestedValue = callDict['spells'][int(value)]['name']
+                    print "Spell name is " + requestedValue
+
+            if value == 'title':
+                print value
+                requestedValue = callDict[value]
+                print "Title is " + requestedValue
+
+            if value2 != '':
+                tweetMessage = value + " " + value2 + " " + requestedValue
+            else:
+                tweetMessage = value + " " + requestedValue
+            print tweetMessage
+            return tweetMessage
+
+        if keywords[0] == 'item':
+            print "ITEM REQUEST!"
+        elif keywords[0] == 'mastery':
+            print keywords[0] + " information requested"
+            check = getMastery(keywords[1])
+            print keywords[1] + " == " + check
+            if check != '':
+                masteryValue = check
+                print "mastery request made======"
+            else:
+                print "mastery not found!"
+
+            #We have to get the 2 values the user is searching for in some cases
+            #by default, the second value is usually just name
+            value = keywords[2]
+            check = getTerm(value, masteryLib)
+            if check != '':
+                value = check
+            else:
+                print "first value not found!"
+
+            r = staticAPI(keywords[0], masteryValue, 'masteryData=all')
+            callDict = json.loads(r.content)
+
+            if value == 'sanitizedDescription':
+                print value
+                requestedValue = callDict[value][0]
+                print "Description is " + requestedValue
+            else:
+                print value
+                requestedValue = callDict[value]
+                print value + " is " + str(requestedValue)
+
+            tweetMessage = value + " " + str(requestedValue)
+            print tweetMessage
+            return tweetMessage
+
+        if keywords[0] == 'spell':
+            print "SPELL REQUEST!"
+        elif keywords[0] == 'status':
+            print keywords[0] + " information requested"
+            check = getTerm(keywords[1], statusLib)
+            if check != '':
+                value = check
+            else:
+                print "First value not found!"
+
+            #r = staticAPI(keywords[0])
 
 def combineTerms(keywords):
     "Combs through every keyword and attempts to group them together"
@@ -303,73 +436,70 @@ def combineTerms(keywords):
     newKeywords = []
     querySize = len(keywords)
     newKeywords.append(keywords[1])
-    x = 3
+    x = 1
     if (keywords[1] == 'summoner'):
+        x = 3
         summonerName = keywords[x - 1]
         while True:
-            print "checking term " + str(x) + " / " + str(querySize)
+            #print "checking term " + str(x) + " / " + str(querySize)
             if (keywords[x] != '?' or x > querySize):
                 summonerName = summonerName + ' ' + keywords[x]
-                print "current name is: " + summonerName
+                #print "current name is: " + summonerName
                 x += 1
             else:
                 newKeywords.append(summonerName)
-                print "Summoner name has been found!"
+                #print "Summoner name has been found!"
                 break
-        #Now we have the name, combine the rest of the terms if possible
-        check = ''
-        term = ''
-        possibleTerm = ''
-        while True:
-            x += 1
-            if (x < querySize):
-                libPass = 0
-                for lib in fullLib:
-                    print "checking term " + str(x) + " / " + str(querySize)
+
+    #Now we have the name, combine the rest of the terms if possible
+    check = ''
+    term = ''
+    possibleTerm = ''
+    while True:
+        x += 1
+        if (x < querySize):
+            libPass = 0
+            for lib in fullLib:
+                #print "checking term " + str(x) + " / " + str(querySize)
+                if term == '':
+                    print "current term is " + keywords[x]
+                    check = termCheck(keywords[x], lib)
+                else:
+                    possibleTerm = term + " " + keywords[x]
+                    print "current term is " + possibleTerm
+                    check = termCheck(possibleTerm, lib)
+
+                if check:
                     if term == '':
-                        print "current term is " + keywords[x]
-                        check = termCheck(keywords[x], lib)
+                        term = keywords[x]
+                        #print "Since term was blank, it is now " + term
                     else:
-                        possibleTerm = term + " " + keywords[x]
-                        print "current term is " + possibleTerm
-                        check = termCheck(possibleTerm, lib)
-
-                    if check:
-                        print "IM IN HERE! STOP!"
-                        if term == '':
-                            term = keywords[x]
-                            print "Since term was blank, it is now " + term
-                        else:
-                            term = possibleTerm
-                            print "Term was not blank, it is now " + term
-                        break
-                    libPass += 1
-            else:
-                print "Every single word has been checked!"
-                newKeywords.append(term)
-                print "final keywords are"
-                print newKeywords
-                break
-
-            print "Checked all libs!"
-            print "term is " + term
-            print "possible term is " + possibleTerm
-            print "Number of passes: " + str(libPass)
-            if (libPass > 7 and term != possibleTerm) or (x == querySize):
-                print "A Full pass was made!"
-                newKeywords.append(term)
-                term = ''
-                possibleTerm = ''
-                x -= 1
-
-            #newKeywords.append(term)
-            print "current keywords are "
+                        term = possibleTerm
+                        #print "Term was not blank, it is now " + term
+                    break
+                libPass += 1
+        else:
+            #print "Every single word has been checked!"
+            newKeywords.append(term)
+            #print "final keywords are"
             print newKeywords
-            # term = ''
-            # possibleTerm = ''
-        # x -= 1
-            #newKeywords.append(term)
-            #term = ''
+            break
+
+        #print "Checked all libs!"
+        #print "term is " + term
+        #print "possible term is " + possibleTerm
+        #print "Number of passes: " + str(libPass) + " out of " + str(len(fullLib))
+        if (libPass >= len(fullLib) and term != possibleTerm) or (x == querySize):
+            print "A Full pass was made!"
+            newKeywords.append(term)
+            term = ''
+            possibleTerm = ''
+            x -= 1
+
+        #newKeywords.append(term)
+        #print "current keywords are "
+        print newKeywords
+
 
     print newKeywords
     return newKeywords
@@ -378,29 +508,71 @@ def termCheck(word, lib):
     "Check to see if term is in a library"
 
     for key in lib:
-        print "checking " + repr(word) + " against key " + repr(key)
-        if word in key:
-            print key + " == " + word
-            return True
-            break
+        if (lib == champNameLib):
+            #print " current key is: " + lib[key]['name']
+            #print repr(lib[key]['name']) + " == " + repr(word)
+            if word in lib[key]['name'].lower():
+                print lib[key]['name'] + " == " + word
+                return True
+                break
+
+        if lib == masteryNameLib:
+            #print "Current key is: " + lib[key]['name']
+            #print repr(lib[key]['name']) + " == " + repr(word)
+            if word in lib[key]['name'].lower():
+                print lib[key]['name'] + " == " + word
+                return True
+                break
+        else:
+            if word in key:
+                print key + " == " + word
+                return True
+                break
 
     return False
 
 def getTerm(term, lib):
     "Looks up a term in the specified library"
-
-    for keys in lib:
-        if (keys == term):
-            return lib[str(keys)]
-            break
+    if lib == champNameLib:
+        for key in lib:
+            if term == lib[key]['name'].lower():
+                return lib[key]['id']
+                break
+    else:
+        for keys in lib:
+            if (keys == term):
+                return lib[str(keys)]
+                break
 
     return ''
 
+def getChamp(champName):
+    "Looks up champion ID for name"
 
-riotKey =
+    for key in champNameLib:
+        #print "checking key " + str(key)
+        if champNameLib[key]['name'].lower() == champName:
+            print "Found: " + champNameLib[key]['name']
+            return champNameLib[key]['id']
+
+    return ''
+
+def getMastery(masteryName):
+    "Looks up Mastery ID for name"
+
+    for key in masteryNameLib:
+        #print "checking key " + str(key)
+        if masteryNameLib[key]['name'].lower() == masteryName:
+            print "Found: " + masteryNameLib[key]['name']
+            return masteryNameLib[key]['id']
+
+    return ''
+
+riotKey = <RIOT API KEY HERE>
+user = ''
 
 #Check current league version
-r = callAPI('versions')
+r = staticAPI('versions')
 callDict = json.loads(r.content)
 inFile = open('versions.txt', 'r')
 inDict = json.load(inFile)
@@ -419,42 +591,52 @@ itemDict = json.loads(inString)
 inFile.close()
 
 itemID = getRandomEntity(itemDict)
-r = callAPI('item', str(itemID['id']))
+r = staticAPI('item', str(itemID['id']))
 inFile = open('summonerSpellIndex.txt', 'r')
 inString = json.load(inFile)
 summonerSpellDict = json.loads(inString)
 inFile.close()
 
 spellID = getRandomEntity(summonerSpellDict)
-r = callAPI('summoner-spell', str(spellID['id']))
+r = staticAPI('summoner-spell', str(spellID['id']))
 
-inFile = open('masteryIndex.txt', 'r')
+inFile = open('masteryNameLib.txt', 'r')
 inString = json.load(inFile)
 masteryDict = json.loads(inString)
 inFile.close()
 
 masteryID = getRandomEntity(masteryDict)
-r = callAPI('mastery', str(masteryID['id']))
+r = staticAPI('mastery', str(masteryID['id']))
 
-inFile = open('championIndex.txt', 'r')
+inFile = open('champNameLib.txt', 'r')
 inString = json.load(inFile)
 championDict = json.loads(inString)
 inFile.close()
 
 championID = getRandomEntity(championDict)
-r = callAPI('champion', str(championID['id']), 'champData=spells')
+r = staticAPI('champion', str(championID['id']), 'champData=spells')
 
 #Open and store all needed libraries
 inFile = open('statLib.txt', 'r')
 statLib = json.load(inFile)
 inFile.close()
 
-inFile = open('championLib.txt', 'r')
-champLib = json.load(inFile)
+inFile = open('champNameLib.txt', 'r')
+inString = json.load(inFile)
+champNameLib = json.loads(inString)
+inFile.close()
+
+inFile = open('champStatLib.txt', 'r')
+champStatLib = json.load(inFile)
 inFile.close()
 
 inFile = open('itemLib.txt', 'r')
 itemLib = json.load(inFile)
+inFile.close()
+
+inFile = open('masteryNameLib.txt', 'r')
+inString = json.load(inFile)
+masteryNameLib = json.loads(inString)
 inFile.close()
 
 inFile = open('masteryLib.txt', 'r')
@@ -477,11 +659,14 @@ inFile = open('seasonLib.txt', 'r')
 seasonLib = json.load(inFile)
 inFile.close()
 
-fullLib = (statLib, champLib, itemLib, masteryLib, spellLib, statusLib, modeLib, seasonLib)
+fullLib = (statLib, champNameLib, champStatLib, itemLib, masteryNameLib, masteryLib, spellLib, statusLib, modeLib, seasonLib)
 
 print "Connecting to twitter...please wait..."
 #Sets up all the needed twitter info
-
+CONSUMER_KEY = <CONSUMER KEY>
+CONSUMER_SECRET = <CONSUMER SECRET>
+ACCESS_KEY = <ACCESS KEY>
+ACCESS_SECRET = <ACCESS SECRET>
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
 api = tweepy.API(auth)
@@ -489,7 +674,7 @@ print "successfully connected to twitter!\n"
 
 myStreamListener = MyStreamListener()
 myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
-myStream.filter(track=['@askleague'])
+myStream.filter(track=['@leagueask'])
 
 # callDict = json.loads(r.content)
 # tweetMessage = callDict['spells'][0]['sanitizedDescription']

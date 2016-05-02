@@ -1,6 +1,5 @@
 {
   "ranks":"ranks",
   "desc":"sanitizedDescription",
-  "name":"name",
   "tree":"masteryTree"
 }

@@ -1,12 +1,9 @@
 {
   "passive":"passive",
-  "desc":"desc",
-  "ally tips":"allytips",
   "q":"0",
   "w":"1",
   "e":"2",
   "r":"3",
-  "range":"range",
   "cost":"cost",
   "desc":"sanitizedDescription",
   "name":"name",
