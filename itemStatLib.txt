@@ -1,0 +1,7 @@
+{
+  "total cost":"total",
+  "desc":"sanitizedDescription",
+  "cost":"base",
+  "sell":"sell",
+  "build into":"into"
+}
