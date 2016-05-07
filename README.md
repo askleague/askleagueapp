@@ -16,3 +16,9 @@ Combining terms and summoner names is done in the combineTerms function. Here we
 
 #### Translating for the API
 Because the API uses specific keys that may be difficult to understand or are not user friendly, we had to create a _library_ that could translate more user friendly keys into keys that the API would understand. An example of this is the term "Aram" is translated into "AramUnranked5x5". Aram is much easier to remember than the key the API uses. There are also some long keys in the API that are not very friendly with the 140 character limitation enforced by twitter.
+
+#### Hosting
+Because the app needs to be on as much as possible in order to listen to requests, I needed to find a way to keep the app up and running without too many issues. For that we decided to go with amazon web service's VPC. We used S3 to store the project and download it to the VPC with every new update we made. If the script happens to crash for whatever reason, we setup a cronjob that checks it's status every 30 minutes, if the app is not up and running, it starts it right back up.
+
+# How to Run
+Running the app is fairly straight forward. First you must install python 2.7.1 and all the dependencies, these are the lines at the top of main.py that start with "import". Once thats all settled, simply open up a terminal/command prompt and navigate to the folder where you've downloaded the app. Once there, enter the command _python main.py_
