@@ -901,7 +901,7 @@ handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=1000, back
 crashLogger.addHandler(handler)
 #logging.basicConfig(filename=LOG_FILENAME, mode='w', level=logging.DEBUG)
 
-riotKey = 'api_key=a4aed4bc-f1de-464c-bd77-cdaa158613c4'
+riotKey = <RIOT API KEY HERE>
 user = ''
 
 #Check current league version
@@ -988,10 +988,10 @@ itemKeys = ('total', 'sanitizedDescription', 'base', 'sell', 'into')
 
 print "Connecting to twitter...please wait..."
 #Sets up all the needed twitter info
-CONSUMER_KEY = 'YMxHQpF0xBxO3usp26wyGs37c'
-CONSUMER_SECRET = '0U68YKgQ91BLYwiT9Xas2Ulf4XEMJPeWLdYmqcyc1ddbUKCcev'
-ACCESS_KEY = '726623686841618432-nLRCcb8PdmEN38R64IoGf4Pa32QNPTT'
-ACCESS_SECRET = 'XRI3uyQJiQ47IpU07XwIPfQm7GHR9ibD2OXsB6Xyf0etJ'
+CONSUMER_KEY = <CONSUMER KEY>
+CONSUMER_SECRET = <CONSUMER SECRET>
+ACCESS_KEY = <ACCESS KEY>
+ACCESS_SECRET = <ACCESS SECRET>
 try:
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
@@ -1004,7 +1004,7 @@ except:
 try:
     myStreamListener = MyStreamListener()
     myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
-    myStream.filter(track=['@askleague2'])
+    myStream.filter(track=['@askleague'])
 except:
     crashLogger.exception('Got an error setting up twitter stream')
     raise
