@@ -9,7 +9,6 @@
       "ranked premade":"rankedPremadeGamesPlayed",
       "losses":"totalSessionsLost",
       "jungle minion kills":"totalNeutralMinionsKilled",
-      "wins":"totalSessionsWon",
       "magic damage":"totalMagicDamageDealt",
       "killing spree":"maxLargestKillingSpree",
       "penta kills":"totalPentaKills",
@@ -33,10 +32,5 @@
       "most deaths":"maxNumDeaths",
       "hexakill":"totalUnrealKills",
       "normal games":"normalGamesPlayed",
-      "wins":"wins",
-      "minion kills":"totalMinionKills",
-      "neutral minion kills":"totalNeutralMinionsKilled",
-      "champion kills":"totalChampionKills",
-      "assists":"totalAssists",
-      "turret kills":"totalTurretsKilled"
+      "wins":"wins"
 }
