@@ -30,7 +30,12 @@ We faced many challenges during the process of creating the script. The majority
 
 We also had problems getting the script to run on a web service without interruption. These challenges were mostly due to our inexperience, but ultimately we managed to get everything settled with Amazon Web Services. Setting up a cron job that handles the services on Amazon's VPCs was the key to getting it up and running. This of course did not come with its share of headaches.
 
-# What we wish we could have done
+# Post-mortem
+We jumped into the challenge a couple days behind, those few days could've made a huge difference in terms of testing and improvements. We were hesitant to use Python as neither of us had worked with it in the past but have heard great things about its simplicity and support. The amount of documentation and support Python has is outstanding. We had little to no trouble learning the quirks of Python and slowly fell in love with the language. We'll definitely be using it a lot more in the future, I'm glad we decided to participate in this challenge as we would not have tried to work with Python without some motivation.
+
+We wish we could have spent more time researching different web hosts and finding one that ultimately works best rather than simply duct taping everything we have now. Amazon Web Services is a fine service but the amount of documentation for it is scarce or hard to follow. After tinkering around with it for a day we finally got everything up and running but it still isn't perfect and there is much we can improve upon.
+
+# Future Plans
 We still plan to support this application after this challenge is over. Our biggest feature we plan on releasing is duo matchmaking. Being able to quickly match yourself with other players who are looking for a quick partner for a couple of games would be awesome. This of course would require us to make this application much more secure as we would then be storing and handling summoner names and data.
 
 We would also like to improve the requests, open them up to other regions other than NA and have better responses that aren't canned to group terms together. There are plenty of quality of life improvements that could be made to improve this application overall.
