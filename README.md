@@ -35,6 +35,8 @@ We jumped into the challenge a couple days behind, those few days could've made 
 
 We wish we could have spent more time researching different web hosts and finding one that ultimately works best rather than simply duct taping everything we have now. Amazon Web Services is a fine service but the amount of documentation for it is scarce or hard to follow. After tinkering around with it for a day we finally got everything up and running but it still isn't perfect and there is much we can improve upon.
 
+We're also a bit disappointed we didn't have as much time to test this out more with the public. There is still a large possibility for user error that could lead to the application crashing which we would have love to cover if we had more user data to find the crashes.
+
 # Future Plans
 We still plan to support this application after this challenge is over. Our biggest feature we plan on releasing is duo matchmaking. Being able to quickly match yourself with other players who are looking for a quick partner for a couple of games would be awesome. This of course would require us to make this application much more secure as we would then be storing and handling summoner names and data.
 
