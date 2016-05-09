@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import json
 import string
 import sys
@@ -10,6 +11,7 @@ import logging
 from logging import handlers
 from random import randint
 from json import dumps
+from quicklock import singleton
 
 #override tweepy.StreamListener to add logic to on_status
 class MyStreamListener(tweepy.StreamListener):
@@ -36,7 +38,11 @@ class MyStreamListener(tweepy.StreamListener):
         if responseTweet == 'fail':
             print "This was a bad request"
         else:
-            sendTweet(responseTweet, tweetID)
+            try:
+                sendTweet(responseTweet, tweetID)
+            except:
+                crashLogger.exception('Got exception on processing request')
+                raise
 
 def buildLibrary():
     "Builds library of all trivia things and saves them as jsons"
@@ -272,15 +278,26 @@ def sendTweet(msg, tweetID=''):
     numMessages = len(tweets)
     if (numMessages > 1):
         i = numMessages
-        for element in reversed(tweets):
-            element = "@" + user + ' (' + str(i) + '/' + str(len(tweets)) + ') ' + element
-            i -= 1
-            print element
-            #api.update_status(element, tweetID)
+        try:
+            for element in reversed(tweets):
+                element = "@" + user + ' (' + str(i) + '/' + str(len(tweets)) + ') ' + element
+                i -= 1
+                print element
+                api.update_status(element, tweetID)
+        except:
+            print "Error sending tweetID"
+            crashLogger.exception('Got exception on processing request')
+            pass
+
     else:
         msg = "@" + user + " " + msg
         print msg
-        #api.update_status(msg, tweetID)
+        try:
+            api.update_status(msg, tweetID)
+        except:
+            print "Error sending tweetID"
+            crashLogger.exception('Got exception on processing request')
+            pass
 
 def processRequest(words, user):
     "Processes a request made by the user"
@@ -458,6 +475,7 @@ def processRequest(words, user):
                         if value2 == 'name':
                             tweetMessage = keywords[1] + "'s " + outSkill.upper() + " is " + requestedValue
                         else:
+                            tweetMessage = keywords[1] + ": " + requestedValue
 
                     if value2 == 'cost':
                         requestedValue = ''
@@ -893,14 +911,21 @@ def getSpellname(spellID):
 
     return ''
 
+# This is used to lock multiple cron jobs from firing
+singleton('resource')
 LOG_FILENAME = './crashlog.txt'
 crashLogger = logging.getLogger('crashLogger')
 crashLogger.setLevel(logging.DEBUG)
 
-handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=1000, backupCount=10)
+handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=90000, backupCount=10)
 crashLogger.addHandler(handler)
 #logging.basicConfig(filename=LOG_FILENAME, mode='w', level=logging.DEBUG)
 
+#Twitter and API Keys
+CONSUMER_KEY = <CONSUMER KEY>
+CONSUMER_SECRET = <CONSUMER SECRET>
+ACCESS_KEY = <ACCESS KEY>
+ACCESS_SECRET = <ACCESS SECRET>
 riotKey = <RIOT API KEY HERE>
 user = ''
 
@@ -987,11 +1012,6 @@ masterykeys = ('ranks', 'sanitizedDescription', 'masteryTree')
 itemKeys = ('total', 'sanitizedDescription', 'base', 'sell', 'into')
 
 print "Connecting to twitter...please wait..."
-#Sets up all the needed twitter info
-CONSUMER_KEY = <CONSUMER KEY>
-CONSUMER_SECRET = <CONSUMER SECRET>
-ACCESS_KEY = <ACCESS KEY>
-ACCESS_SECRET = <ACCESS SECRET>
 try:
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
@@ -1004,7 +1024,7 @@ except:
 try:
     myStreamListener = MyStreamListener()
     myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
-    myStream.filter(track=['@askleague'])
+    myStream.filter(track=['TwitterAccountHere'])
 except:
     crashLogger.exception('Got an error setting up twitter stream')
     raise
