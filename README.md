@@ -22,3 +22,15 @@ Because the app needs to be on as much as possible in order to listen to request
 
 # How to Run
 Running the app is fairly straight forward. First you must install python 2.7.1 and all the dependencies, these are the lines at the top of main.py that start with "import". Once thats all settled, simply open up a terminal/command prompt and navigate to the folder where you've downloaded the app. Once there, enter the command _python main.py_
+
+# Challenges
+The biggest challenge we faced was getting easy to remember terms so people don't have to constantly come look at the wiki for information. We tried keeping them as simple as possible and self explanitory as possible. Even so, some of them may not be as easy as others, especially when it comes to summoner data. We asked a couple of people to go through our list and see if they made sense and we believe we found a good balance.
+
+We faced many challenges during the process of creating the script. The majority of them came from twitter and how their system works. Primarily, the 140 character limit. Not only did we have to find a way to work with the limit, but we also had to find simple ways to display data, specifically descriptions.
+
+We also had problems getting the script to run on a web service without interruption. These challenges were mostly due to our inexperience, but ultimately we managed to get everything settled with Amazon Web Services. Setting up a cron job that handles the services on Amazon's VPCs was the key to getting it up and running. This of course did not come with its share of headaches.
+
+# What we wish we could have done
+We still plan to support this application after this challenge is over. Our biggest feature we plan on releasing is duo matchmaking. Being able to quickly match yourself with other players who are looking for a quick partner for a couple of games would be awesome. This of course would require us to make this application much more secure as we would then be storing and handling summoner names and data.
+
+We would also like to improve the requests, open them up to other regions other than NA and have better responses that aren't canned to group terms together. There are plenty of quality of life improvements that could be made to improve this application overall.
